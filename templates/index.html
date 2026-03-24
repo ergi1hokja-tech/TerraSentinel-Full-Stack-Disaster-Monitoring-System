@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!-- HERO SECTION -->
+<div class="hero-section">
+
+    <h2 class="hero-title">
+        🌍 Welcome to <span>TerraSentinel</span>
+    </h2>
+
+    <p class="hero-subtext">
+        TerraSentinel is an AI-powered disaster risk management system that predicts and monitors
+        <strong>earthquakes</strong>, <strong>floods</strong>, and <strong>wildfires</strong>
+        using real-time global data.
+    </p>
+
+    <p class="hero-subtext">
+        Explore the dashboard to view live risks, analyze events, and get automated alerts for your region.
+    </p>
+
+    <div class="hero-buttons">
+        <a href="/dashboard" class="hero-btn primary">⚡ Open Dashboard</a>
+        <a href="/alerts" class="hero-btn">🚨 Critical Alerts</a>
+    </div>
+
+</div>
+
+<!-- IMAGE SECTION -->
+<div class="image-center fade-in">
+    <img src="{{ url_for('static', filename='images/disaster_cycle.png') }}"
+         alt="Disaster Management Cycle" class="cycle-img" />
+    <p class="img-caption">The Disaster Management Cycle</p>
+</div>
+
+
+
+<!-- FEATURE GRID -->
+<div class="feature-section fade-in">
+
+    <h2 class="section-title">What You Can Do With TerraSentinel</h2>
+    <p class="section-subtext">
+        Our dashboard gives you a powerful suite of tools to track disasters, understand risks,
+        and receive real-time early warnings.
+    </p>
+
+    <div class="feature-grid">
+
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Real-Time Dashboard</h3>
+            <p>
+                View global disaster activity instantly with live updates on earthquakes,
+                floods, and wildfires collected from international monitoring networks.
+            </p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧠</div>
+            <h3>AI-Powered Risk Forecasting</h3>
+            <p>
+                Our machine-learning system analyzes historical data, climate patterns,
+                and seismic activity to estimate potential future risks worldwide.
+            </p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚨</div>
+            <h3>Critical Alerts</h3>
+            <p>
+                Receive automated disaster alerts personalized for your region. Stay aware,
+                prepared, and informed when new threats appear.
+            </p>
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- WHY SECTION -->
+<div class="why-section fade-in">
+    <h2 class="section-title">Why TerraSentinel Matters</h2>
+    <p class="section-subtext">
+        Natural disasters strike without warning — but information saves lives.
+        TerraSentinel combines advanced technology and global monitoring
+        to help communities, travelers, and organizations stay prepared.
+    </p>
+
+    <ul class="why-list">
+        <li>✔ Predict disaster risks before they happen</li>
+        <li>✔ Monitor global events on an interactive 2D/3D map</li>
+        <li>✔ Get instant alerts for dangerous activity</li>
+        <li>✔ Analyze severity, frequency, and long-term hazard trends</li>
+        <li>✔ Access all tools in one unified dashboard</li>
+    </ul>
+</div>
+
+
+
+<!-- CALL TO ACTION -->
+<div class="cta-section fade-in">
+    <h2>Ready to Explore the Dashboard?</h2>
+    <p>Access global risk insights, AI forecasts, and live disaster monitoring — all in one place.</p>
+    <a href="/dashboard" class="cta-btn">🚀 Go to Dashboard</a>
+</div>
+
+{% endblock %}

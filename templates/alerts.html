@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2 class="page-title">🔥 Critical Alerts</h2>
+
+<!-- FILTER BAR -->
+<div class="alert-filter-bar">
+    <button onclick="loadAlerts('earthquake')" id="btn-earthquake" class="filter-btn2">🌋 Earthquakes</button>
+    <button onclick="loadAlerts('flood')" id="btn-flood" class="filter-btn2">🌊 Floods</button>
+    <button onclick="loadAlerts('wildfire')" id="btn-wildfire" class="filter-btn2">🔥 Wildfires</button>
+    <button onclick="loadAlerts()" id="btn-all" class="filter-btn2 active">Show All</button>
+</div>
+
+<!-- ALERT LIST -->
+<div id="alertsList"></div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/socket.io/socket.io.js"></script>
+<script>
+
+const socket = io();
+
+// Toast popup
+function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.opacity = 1;
+    setTimeout(() => t.style.opacity = 0, 1800);
+}
+
+// Load alerts
+async function loadAlerts(type = "") {
+    let url = "/api/alerts";
+    if (type) url += `?type=${encodeURIComponent(type)}`;
+
+    const res = await fetch(url);
+    const alerts = await res.json();
+
+    const container = document.getElementById("alertsList");
+    container.innerHTML = "";
+
+    if (!alerts.length) {
+        container.innerHTML = `
+            <div class="alert-card empty">
+                📭 No ${type || "critical"} alerts found.
+            </div>`;
+        return;
+    }
+
+    alerts.forEach(a => {
+        container.innerHTML += `
+            <div class="alert-card">
+                <div class="alert-info">
+                    <div class="alert-type">${a.type.toUpperCase()}</div>
+                    <div class="alert-location">${a.location}</div>
+                    <div class="alert-date">${a.date}</div>
+                    <div class="alert-severity ${a.severity.toLowerCase()}">${a.severity}</div>
+                </div>
+
+                <button class="ack-btn" onclick="ackAlert('${a.id}')">
+                    Acknowledge
+                </button>
+            </div>`;
+    });
+
+    // Activate filter button
+    document.querySelectorAll('.filter-btn2').forEach(btn => btn.classList.remove("active"));
+    if (type) {
+        document.getElementById(`btn-${type}`).classList.add("active");
+    } else {
+        document.getElementById("btn-all").classList.add("active");
+    }
+}
+
+// Acknowledge alert
+function ackAlert(id) {
+    fetch(`/api/alerts/${id}/ack`, { method: "POST" })
+        .then(() => {
+            showToast("Alert acknowledged!");
+            loadAlerts();
+        })
+        .catch(() => showToast("Failed to acknowledge"));
+}
+
+// SOCKET (real-time)
+socket.on("new_alert", () => { showToast("New critical alert!"); loadAlerts(); });
+socket.on("alert_removed", () => { showToast("Alert removed"); loadAlerts(); });
+socket.on("hourly_alerts", ({ summary }) => {
+    showToast("New critical events: " + summary);
+    loadAlerts();
+});
+
+// Initial load
+document.addEventListener("DOMContentLoaded", loadAlerts);
+</script>
+{% endblock %}

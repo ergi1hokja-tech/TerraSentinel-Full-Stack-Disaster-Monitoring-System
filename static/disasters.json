@@ -1,0 +1,34 @@
+[
+    {
+        "type": "earthquake",
+        "coords": [41.3275, 19.8187],
+        "location": "Tirana",
+        "date": "2025-06-11",
+        "severity": "High",
+        "description": "6.2 magnitude quake detected. Emergency services on alert."
+    },
+    {
+        "type": "flood",
+        "coords": [40.6401, 20.7828],
+        "location": "Gjirokastër",
+        "date": "2025-06-10",
+        "severity": "Medium",
+        "description": "River levels rising after heavy rain. Stay alert."
+    },
+    {
+        "type": "wildfire",
+        "coords": [40.0796, 20.1385],
+        "location": "Vlorë",
+        "date": "2025-06-09",
+        "severity": "Extreme",
+        "description": "Rapid spread due to dry conditions. Evacuation in progress."
+    },
+    {
+        "type": "earthquake",
+        "coords": [39.5, 20.5],
+        "location": "New City",
+        "date": "2025-06-12",
+        "severity": "Low",
+        "description": "Minor tremor, no damage reported."
+    }
+]

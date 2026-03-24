@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TerraSentinel</title>
+
+    <!-- GLOBAL STYLES -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css">
+
+    <style>
+        /* === FINAL FIX: FORCE BACKGROUND VIDEO ALWAYS BEHIND EVERYTHING === */
+
+        #bg-video {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -9999 !important; /* put far behind */
+            opacity: 1;
+            transition: opacity 0.7s ease;
+            pointer-events: none !important;
+        }
+
+        #video-overlay {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.45);
+            z-index: -9998 !important;
+        }
+
+        /* ===========================
+           LAYOUT + CONTENT
+        ============================ */
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            padding: 10px 0 0 0;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 100 !important;
+        }
+
+        header h1 {
+            color: #ff4d4d;
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(255,0,0,0.4);
+        }
+
+        nav {
+            padding: 12px 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            width: 80%;
+            margin: auto;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 100 !important;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #ffffff;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        nav a:hover {
+            color: #ff4d4d;
+            transform: scale(1.06);
+        }
+
+        main {
+            position: relative !important;
+            z-index: 100 !important;
+            margin-top: 20px;
+        }
+
+        .content-wrapper {
+            max-width: 1150px;
+            margin: auto;
+            margin-bottom: 60px;
+            padding: 0 20px;
+            position: relative !important;
+            z-index: 100 !important;
+        }
+
+        footer {
+            text-align: center;
+            padding: 18px 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(8px);
+            position: relative;
+            z-index: 100 !important;
+        }
+
+        footer p {
+            color: #dddddd;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 🎥 BACKGROUND VIDEO -->
+    <video id="bg-video" autoplay muted></video>
+
+    <!-- DARK OVERLAY -->
+    <div id="video-overlay"></div>
+
+    <!-- 🎥 Video Playlist Script -->
+    <script>
+        const playlist = [
+            "{{ url_for('static', filename='videos/earthquakes.mp4') }}",
+            "{{ url_for('static', filename='videos/floods.mp4') }}",
+            "{{ url_for('static', filename='videos/wildfires.mp4') }}"
+        ];
+
+        let index = 0;
+        const player = document.getElementById("bg-video");
+
+        function playNext() {
+            player.src = playlist[index];
+            player.play();
+            index = (index + 1) % playlist.length;
+        }
+
+        player.addEventListener("ended", () => {
+            player.style.opacity = 0;
+            setTimeout(() => {
+                playNext();
+                player.style.opacity = 1;
+            }, 700);
+        });
+
+        playNext();
+    </script>
+
+
+    <!-- ===========================
+         HEADER + NAVIGATION
+    ============================ -->
+    <header>
+        <h1 class="logo-title">🌍 TerraSentinel</h1>
+
+
+        <nav class="nav-bar">
+            <a href="/">Home</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/alerts">Alerts</a>
+            <a href="/about">About</a>
+            <a href="/inbox">📬 Inbox</a>
+
+            <span style="flex-grow: 1;"></span>
+
+            {% if session.get('user_id') %}
+                <span style="color:white; margin-right:12px; font-weight:bold;">
+                    {% if session.get('is_admin') %}
+                        Welcome, Admin
+                    {% else %}
+                        Welcome, {{ session.get('username') }}
+                    {% endif %}
+                </span>
+
+                <a href="/logout" style="background:#e74c3c; padding:6px 12px; border-radius:8px; color:white;">
+                    Logout
+                </a>
+
+            {% else %}
+
+                <a href="/login" style="background:#1589A5; padding:6px 12px; border-radius:8px; color:white;">
+                    Sign In
+                </a>
+
+                <a href="/signup" style="background:#27ae60; padding:6px 12px; border-radius:8px; color:white;">
+                    Sign Up
+                </a>
+
+            {% endif %}
+        </nav>
+    </header>
+
+
+    <!-- ===========================
+         PAGE CONTENT
+    ============================ -->
+    <main>
+        <div class="content-wrapper">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+
+    <!-- ===========================
+         FOOTER
+    ============================ -->
+    <footer>
+        <p>&copy; 2025 TerraSentinel. All rights reserved.</p>
+    </footer>
+
+
+    <!-- JS Libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

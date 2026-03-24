@@ -1,0 +1,1109 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="header-shade"></div>
+
+<div class="container">
+ <h2 class="scale-in" style="color: white;">
+    <b>Disaster Risk Dashboard</b>
+</h2>
+<div id="liveCounter" class="card" style="text-align:center;font-size:1.6rem;font-weight:bold;padding:12px;margin-top:12px;">
+    🌍 Loading live global disaster count...
+</div>
+
+  <!-- Dark Mode & Print -->
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:16px;">
+    <button id="toggleDarkModeBtn" class="filter-btn" style="background:#222;color:#fff;">🌙 Dark Mode</button>
+    <button id="printReportBtn" class="filter-btn" style="background:#417c43;color:#fff;">🖨️ Print Report</button>
+  </div>
+
+
+  
+
+    <!-- Predict Region Risk -->
+    <div class="predict-risk-form" style="margin-bottom:20px;background:#f0f4f8;padding:14px;border-radius:12px;">
+      <strong>🔮 Predict Region Risk</strong>
+
+      <!-- 🌍 Global Forecast Summary -->
+      <div id="globalForecastCard" class="card mt-4 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">🌐 Global Forecast Summary</h5>
+          <p class="text-muted small">Real-time AI analysis of worldwide disaster trends</p>
+
+          <div id="globalForecastLoading" class="text-secondary mb-2">
+            <em>Fetching latest global forecast...</em>
+          </div>
+
+          <ul id="globalForecastList" class="list-group list-group-flush"></ul>
+
+          <div class="mt-3">
+            <h6 class="fw-bold">🧠 AI Forecast:</h6>
+            <p id="globalForecastSummary" class="text-secondary" style="white-space: pre-line;"></p>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+        <select id="riskRegion" placeholder="🌎 Select or type a region..."></select>
+        <select id="riskTimeframe" style="padding:6px;border-radius:4px;">
+          <option>next week</option>
+          <option>next month</option>
+          <option>next year</option>
+        </select>
+        <button id="predictBtn" class="filter-btn" style="background:#795548;">🔍 Predict</button>
+      </div>
+      <div id="riskResult" style="margin-top:10px;font-style:italic;"></div>
+
+      <!-- Forecast History -->
+      <h4>Forecast History</h4>
+
+      <div id="forecastHistoryBox" style="padding:12px;border-radius:12px;max-height:180px;overflow:auto;">
+        <ul id="forecastHistory" style="padding-left:20px;margin:0;"></ul>
+     </div>
+  </div>
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="summary-label">Total Events</div>
+      <div class="summary-value" id="totalEvents">0</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Most Common</div>
+      <div class="summary-value" id="mostCommon">—</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Last Event Date</div>
+      <div class="summary-value" id="lastDate">—</div>
+    </div>
+  </div>
+
+  <!-- Live Stats -->
+  <div class="live-stats" style="margin-bottom:14px;">
+    <span style="color: white;"id="typePercents"></span>
+    <span style="color: white;"id="mostSevere" style="margin-left:24px;"></span>
+    <span style="color: white;"id="newestOldest" style="margin-left:24px;"></span>
+  </div>
+
+  <!-- Type Filters -->
+  <p><b style="color: white;">Interactive map: see disaster risk locations below.</b></p>
+  <div style="margin-bottom:18px;">
+    <button class="filter-btn active" data-type="all">Show All</button>
+    <button class="filter-btn" data-type="earthquake">Earthquake</button>
+    <button class="filter-btn" data-type="flood">Flood</button>
+    <button class="filter-btn" data-type="wildfire">Wildfire</button>
+  </div>
+
+  <!-- Date Range & Reset -->
+  <div class="date-range" style="color:white; margin:16px 0;">
+    <label >From: <input type="date" id="dateFrom"></label>
+    <label style="margin-left:16px;">To: <input type="date" id="dateTo"></label>
+    <button id="resetFiltersBtn" class="filter-btn" style="background:#8d1b1b;color:#fff;margin-left:10px;">
+      🔄 Reset All Filters
+    </button>
+  </div>
+    <!-- Map -->
+  <div style="display:flex; gap:20px; margin-bottom:25px;">
+
+    <!-- LEFT: MAP -->
+    <div style="flex:1; min-width:300px;">
+        <div id="map" style="height:300px;border-radius:16px;overflow:hidden;"></div>
+
+        <div class="map-legend" style="margin-top:10px;">
+            <strong>Legend:</strong>
+            <span class="legend-item"><span class="emoji-marker">🌋</span> Earthquake</span>
+            <span class="legend-item"><span class="emoji-marker">🌊</span> Flood</span>
+            <span class="legend-item"><span class="emoji-marker">🔥</span> Wildfire</span>
+        </div>
+
+        <div style="text-align:center; margin-top:12px;">
+            <button id="btn2DMap" class="filter-btn" style="background:#2b6cb0;color:#fff;">🗺️ 2D Map</button>
+            <button id="btn3DMap" class="filter-btn" style="background:#38a169;color:#fff;">🌍 3D Globe</button>
+        </div>
+
+        <div id="globeContainer"
+            style="width:100%;height:300px;border-radius:16px;overflow:hidden;display:none;margin-top:10px;">
+        </div>
+    </div>
+
+    <!-- RIGHT: ADD EVENT FORM (ADMIN ONLY) -->
+    {% if session.get('is_admin') %}
+    <div class="add-event-box">
+        <strong>Add New Event:</strong>
+        <form id="newEventForm" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+
+            <select id="newType" required>
+                <option value="">Type</option>
+                <option value="earthquake">🌋 Earthquake</option>
+                <option value="flood">🌊 Flood</option>
+                <option value="wildfire">🔥 Wildfire</option>
+            </select>
+
+            <input id="newLocation" placeholder="Location" required>
+            <input type="date" id="newDate" required>
+            <input id="newSeverity" placeholder="Severity" required>
+            <input id="newCoords" placeholder="Click map to set lat,lng" required>
+            <input id="newDesc" placeholder="Description">
+
+            <button type="submit" class="filter-btn" style="background:#417c43;">➕ Add</button>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Placeholder for 3D Globe (hidden by default) -->
+<div id="globeContainer"
+     style="width:100%;height:300px;border-radius:16px;overflow:hidden;display:none;margin-top:10px;">
+</div>
+
+      <!-- Map & Chart Side-by-Side -->
+ <!-- ⭐ SEARCH + EXPORT (CENTERED FOR BOTH PANELS) -->
+<div style="
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 25px;
+    margin-bottom: 10px;
+">
+    <input type="text" id="searchInput" placeholder="Search disasters..."
+           style="padding: 8px 10px; width: 40%; border-radius: 6px; border: none;">
+    
+    <button id="clearSearchBtn" class="filter-btn" style="background:#444;color:#fff;">
+        ❌ Clear
+    </button>
+</div>
+
+
+<!-- ⭐ CHART & TABLE SIDE-BY-SIDE -->
+<div style="display: flex; gap: 20px; margin-top: 10px; align-items: flex-start;">
+
+    <!-- LEFT: CHART -->
+    <div style="
+        flex: 1;
+        min-width: 380px;
+        max-width: 48%;
+        background: rgba(0, 0, 0, 0.35);
+        padding: 20px;
+        border-radius: 12px;
+        color: white;
+    ">
+        <h3>Disaster Events Summary</h3>
+        <canvas id="disasterChart" width="350" height="200"></canvas>
+
+        <button id="downloadChartBtn" class="filter-btn"
+                style="background:#417c43;margin-top:8px;">
+            🖼️ Download Chart
+        </button>
+    </div>
+
+    <!-- RIGHT: TABLE -->
+    <div style="
+        flex: 1;
+        min-width: 380px;
+        max-width: 48%;
+        background: rgba(255, 255, 255, 0.08);
+        padding: 20px;
+        border-radius: 12px;
+    ">
+        <h3 style="color: white;">Disaster Event Details</h3>
+
+        <!-- ⭐ EXPORT CSV ONLY FOR TABLE -->
+        <button id="exportCsvBtn" class="filter-btn"
+                style="background:#3a6ea5;margin:10px 0;">
+            ⬇️ Export Table (CSV)
+        </button>
+
+        <div style="overflow-x:auto; max-height: 450px;">
+            <table id="disasterTable" class="disaster-table">
+                <thead>
+                    <tr>
+                        <th class="sortable" data-sort="type">Type</th>
+                        <th class="sortable" data-sort="location">Location</th>
+                        <th class="sortable" data-sort="date">Date</th>
+                        <th class="sortable" data-sort="severity">Severity</th>
+                        <th class="sortable" data-sort="description">Description</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- ⭐ PAGINATION (TABLE ONLY) -->
+        <div class="pagination-controls"
+             style="margin-top:10px;display:flex;align-items:center;gap:12px;">
+            <button id="prevPageBtn" class="filter-btn">⏪ Prev</button>
+            <span id="pageInfo"></span>
+            <button id="nextPageBtn" class="filter-btn">Next ⏩</button>
+
+            <span style="margin-left:14px;color:white;">
+                Rows per page:
+                <select id="pageSizeSelect" style="padding:2px 6px;">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+            </span>
+        </div>
+
+        <div style="margin-top:8px;"><span id="rowCount"></span></div>
+    </div>
+
+
+ </div>
+
+
+  <!-- Toast + FAB -->
+  <div id="toast" class="toast"></div>
+  <button id="fabBtn" class="fab-btn" title="Reset & Go Top">⏫</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<!-- ✅ Leaflet + GlobeView setup -->
+<!-- ✅ Working 3D Globe plugin -->
+<!-- ✅ Working 3D Globe setup (Globe.gl + Three.js) -->
+<!-- ✅ Correct Globe.gl setup -->
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="https://d3js.org/topojson.v1.min.js"></script>
+<!-- 🌍 Planetary.js Globe Initialization -->
+<script src="https://unpkg.com/planetary.js@1.1.2/dist/planetaryjs.min.js"></script>
+<script>
+async function refreshCounter() {
+    try {
+        const res = await fetch("/api/disaster_count");
+        const data = await res.json();
+
+        document.getElementById("liveCounter").innerHTML =
+            `🌍 ${data.count} disasters recorded`;
+    } catch (e) {
+        console.error("Counter error:", e);
+    }
+}
+
+refreshCounter();
+setInterval(refreshCounter, 10000);  // updates every 10 seconds
+</script>
+
+<script>
+function initPlanetaryGlobe() {
+    const globeDiv = document.getElementById("globeContainer");
+    globeDiv.innerHTML = "";
+
+    const width = globeDiv.clientWidth;
+    const height = globeDiv.clientHeight;
+
+    const globe = planetaryjs.planet();
+
+    // 🌍 EARTH LAYER
+    globe.loadPlugin(planetaryjs.plugins.earth({
+        topojson: { file: "https://unpkg.com/world-atlas@1/world/110m.json" },
+        oceans:   { fill: "#001f3f" },
+        land:     { fill: "#3da35d" },
+        borders:  { stroke: "#ffffff" }
+    }));
+
+    // 🎯 CENTER GLOBE
+    globe.loadPlugin(function (planet) {
+        planet.onInit(function () {
+            planet.projection.translate([width / 2, height / 2]);
+            planet.projection.scale(height / 2.2);
+        });
+    });
+
+    // 🔍 ZOOM + DRAG
+    globe.loadPlugin(planetaryjs.plugins.zoom());
+    globe.loadPlugin(planetaryjs.plugins.drag());
+
+    // 🌎 AUTOROTATE
+    globe.loadPlugin(function (planet) {
+        let speed = 1;
+        planet.onDraw(function () {
+            const r = planet.projection.rotate();
+            r[0] += speed * 0.2;
+            planet.projection.rotate(r);
+        });
+    });
+
+    // ⭐⭐⭐ EMOJI MARKERS — MUST LOAD BEFORE DRAW ⭐⭐⭐
+    // ⭐⭐⭐ FIXED EMOJI MARKERS PLUGIN ⭐⭐⭐
+globe.loadPlugin(function (planet) {
+    // FIX: create plugin container if missing
+    planet.plugins = planet.plugins || {};
+
+    // Our custom plugin
+    planet.plugins.emojiMarkers = {
+        markers: [],
+        addMarker(marker) {
+            this.markers.push(marker);
+        }
+    };
+
+ planet.onDraw(function () {
+    const ctx = planet.context;
+    ctx.font = "28px serif";
+
+    const r = planet.projection.rotate();
+
+    // IMPORTANT FIX: Planetary.js reverses longitude rotation
+    const rotLng = (-r[0]) * Math.PI / 180;
+    const rotLat = r[1] * Math.PI / 180;
+
+    planet.plugins.emojiMarkers.markers.forEach(m => {
+        const mLng = m.lng * Math.PI / 180;
+        const mLat = m.lat * Math.PI / 180;
+
+        // Angular distance using spherical law of cosines
+        const cosAngDist =
+            Math.sin(mLat) * Math.sin(rotLat) +
+            Math.cos(mLat) * Math.cos(rotLat) * Math.cos(mLng - rotLng);
+
+        // FIX: correct visibility (must be > 0)
+        if (cosAngDist <= 0) return;
+
+        const xy = planet.projection([m.lng, m.lat]);
+        if (xy) ctx.fillText(m.emoji, xy[0] - 14, xy[1] + 10);
+    });
+});
+
+
+
+});
+
+
+    // 🎨 CREATE CANVAS
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    globeDiv.appendChild(canvas);
+
+    // ⭐ SAFE: expose globe only now
+    window.__planetaryGlobe = globe;
+
+    // ⭐ Add markers BEFORE the first draw
+globe.onInit(() => {
+   // Use already prepared window.__disasterData
+if (!window.__disasterData) return;
+
+window.__disasterData
+  .filter(d => d && !isNaN(d.lat) && !isNaN(d.lng))
+  .forEach(d => {
+      globe.plugins.emojiMarkers.addMarker({
+          lat: d.lat,
+          lng: d.lng,
+          emoji:
+              d.type === "earthquake" ? "🌋" :
+              d.type === "flood"      ? "🌊" :
+                                        "🔥"
+      });
+  });
+
+});
+
+// ⭐ NOW draw ONCE (planet starts + onInit fires here)
+globe.draw(canvas);
+
+}
+
+
+
+</script>
+
+
+
+
+<!-- 2D / 3D Switch Logic -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const mapDiv = document.getElementById("map");
+  const globeDiv = document.getElementById("globeContainer");
+  const btn2D = document.getElementById("btn2DMap");
+  const btn3D = document.getElementById("btn3DMap");
+
+  // initial state
+  btn2D.style.opacity = "1";
+  btn3D.style.opacity = "0.7";
+
+  btn2D.addEventListener("click", () => {
+    mapDiv.style.display = "block";
+    globeDiv.style.display = "none";
+    btn2D.style.opacity = "1";
+    btn3D.style.opacity = "0.7";
+  });
+
+  btn3D.addEventListener("click", () => {
+  mapDiv.style.display = "none";
+  globeDiv.style.display = "block";
+  btn3D.style.opacity = "1";
+  btn2D.style.opacity = "0.7";
+
+  if (window.__disasterData) {
+initPlanetaryGlobe();  // ✅ correct call
+
+  } else {
+    console.warn("No disaster data available yet for globe.");
+  }
+});
+}); // <-- closes DOMContentLoaded
+</script>
+
+
+
+
+
+<script>
+/* ---------------------------
+   Helpers used across page
+--------------------------- */
+// ⭐ Normalizes data from API (fix case issues, removes nulls, fixes coords)
+function normalizeArray(arr) {
+    if (!Array.isArray(arr)) return [];
+
+    return arr
+        .filter(e => e && typeof e === "object")
+        .map(e => {
+            // normalize type
+            if (e.type) e.type = e.type.toLowerCase().trim();
+
+            // normalize coords (some DB entries store latitude/longitude instead of coords)
+            if (!e.coords || !Array.isArray(e.coords)) {
+                if (typeof e.latitude === "number" && typeof e.longitude === "number") {
+                    e.coords = [e.latitude, e.longitude];
+                }
+            }
+
+            return e;
+        });
+}
+
+// 🌍 Global Forecast loader
+async function loadGlobalForecast() {
+  const list = document.getElementById("globalForecastList");
+  const summary = document.getElementById("globalForecastSummary");
+  const loading = document.getElementById("globalForecastLoading");
+
+  list.innerHTML = "";
+  summary.textContent = "";
+  loading.style.display = "block";
+
+  try {
+    const res = await fetch("/api/global_forecast");
+    const data = await res.json();
+
+    if (!data.top_regions) {
+      loading.innerHTML = "<span class='text-danger'>⚠️ No forecast data available.</span>";
+      return;
+    }
+
+    loading.style.display = "none";
+
+    data.top_regions.forEach(r => {
+      const item = document.createElement("li");
+      item.className = "list-group-item d-flex justify-content-between align-items-start";
+      item.innerHTML = `
+        <div>
+          <strong>${r.region}</strong>
+          <br>
+          <small>${r.types.join(", ")}</small>
+        </div>
+        <span class="badge bg-${r.score > 0.7 ? 'danger' : r.score > 0.5 ? 'warning' : 'success'}">
+          ${(r.score * 100).toFixed(0)}%
+        </span>
+      `;
+      list.appendChild(item);
+    });
+
+    summary.textContent = data.summary || "No AI forecast available.";
+  } catch (err) {
+    console.error(err);
+    loading.innerHTML = "<span class='text-danger'>❌ Failed to load forecast.</span>";
+  }
+}
+
+// 🌎 Region dropdown + TomSelect
+async function loadRegions() {
+  try {
+    const res = await fetch("/api/regions");
+    const regions = await res.json();
+
+    const select = document.getElementById("riskRegion");
+    select.innerHTML = "";
+
+    regions.forEach(r => {
+      const option = document.createElement("option");
+      option.value = r.name;
+      option.textContent = `${r.flag} ${r.name} (${r.country})`;
+      select.appendChild(option);
+    });
+
+    setTimeout(() => {
+      new TomSelect("#riskRegion", {
+        create: false,
+        sortField: { field: "text", direction: "asc" },
+        placeholder: "🌎 Type or select a region...",
+        maxOptions: 500
+      });
+    }, 100);
+
+    console.log("✅ Region selector initialized:", regions.length);
+  } catch (err) {
+    console.error("❌ Failed to load regions:", err);
+  }
+}
+function updateLiveCounter() {
+    fetch('/api/disaster_count')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('liveCounter').innerHTML =
+                `🌍 Live Global Disasters: <b>${data.count}</b>`;
+        });
+}
+setInterval(updateLiveCounter, 5000);
+updateLiveCounter();
+
+/* ---------------------------
+   Main page logic
+--------------------------- */
+document.addEventListener('DOMContentLoaded', function () {
+  // Auto-load global forecast + regions
+  loadGlobalForecast();
+  setInterval(loadGlobalForecast, 60 * 60 * 1000); // hourly
+  setTimeout(loadRegions, 300);
+
+  // Toast helper (scoped globally inside this handler)
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.opacity = 1;
+    setTimeout(() => { t.style.opacity = 0; }, 1800);
+  }
+
+  // Predict button handler (now in same scope as showToast)
+  document.getElementById('predictBtn').addEventListener('click', function () {
+    const region    = document.getElementById('riskRegion').value.trim();
+    const timeframe = document.getElementById('riskTimeframe').value;
+    if (!region) {
+      showToast('Enter a region!');
+      return;
+    }
+    document.getElementById('riskResult').textContent = 'Predicting…';
+    fetch('/api/predict_risk', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({ region, timeframe })
+})
+.then(async res => {
+  if (res.status === 401) {
+    showToast('⚠️ You must log in to use prediction.');
+    window.location.href = '/login';
+    return;
+  }
+
+  const body = await res.json().catch(()=>({}));
+  if (!res.ok) throw new Error(body.error || res.status);
+  return body;
+})
+.then(data => {
+  document.getElementById('riskResult').textContent = data.prediction;
+  saveForecast(region, timeframe, data.prediction);
+})
+.catch(err => {
+  console.error(err);
+  showToast('Prediction failed');
+  document.getElementById('riskResult').textContent = '';
+});
+
+  });
+
+  // Forecast history (single source of truth)
+  function renderForecastHistory() {
+    fetch('/api/forecasts')
+      .then(r=>r.json())
+      .then(list=>{
+        const ul = document.getElementById('forecastHistory');
+        ul.innerHTML = '';
+        list.forEach(f => {
+          const d = new Date(f.created_at);
+          const li = document.createElement('li');
+          li.innerHTML =
+            `<strong>${f.region}</strong> (${f.timeframe}) on ${d.toLocaleDateString('en-GB')} ` +
+            `at ${d.toLocaleTimeString('en-GB')}:<br>${f.prediction}`;
+          ul.appendChild(li);
+        });
+      })
+      .catch(console.error);
+  }
+  function saveForecast(region, timeframe, prediction) {
+    fetch('/api/forecasts', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({region, timeframe, prediction})
+    })
+    .then(()=>renderForecastHistory())
+    .catch(console.error);
+  }
+
+  fetch('/api/disasters')
+    .then(response => response.json())
+    .then(function(disasters) {
+
+        // ⭐ Correct: normalize once
+        disasters = normalizeArray(disasters);
+
+        var allDisasters = disasters.slice();
+        window.__disasterData = allDisasters;
+      var map, icons, markers = [];
+      var currentFilterType = 'all';
+      var currentSearchQuery = '';
+      var currentDateFrom = '';
+      var currentDateTo = '';
+      var currentSortCol = '';
+      var currentSortDir = 'asc';
+      var pageSize = 10;
+      var pageNum = 1;
+      var localDisasters = [];
+
+      function fetchAndRenderDisasters() {
+    fetch('/api/disasters')
+      .then(r => r.json())
+      .then(data => {
+          allDisasters = normalizeArray(data).slice();
+          renderAll();
+      })
+      .catch(console.error);
+}
+
+      // initial pull
+      fetchAndRenderDisasters();
+
+      document.getElementById('fabBtn').addEventListener('click', function() {
+        window.scrollTo({top:0,behavior:'smooth'});
+        document.getElementById('resetFiltersBtn').click();
+        showToast('Filters reset, back to top!');
+      });
+
+      // New event form
+      // New event form (admin only – safe)
+const newEventForm = document.getElementById('newEventForm');
+
+if (newEventForm) {
+  newEventForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const newEv = {
+      type:        document.getElementById('newType').value,
+      location:    document.getElementById('newLocation').value,
+      date:        document.getElementById('newDate').value,
+      severity:    document.getElementById('newSeverity').value,
+      coords:      document.getElementById('newCoords').value
+                     .split(',')
+                     .map(s => parseFloat(s.trim())),
+      description: document.getElementById('newDesc').value
+    };
+
+    if (!newEv.type || !newEv.location || !newEv.date || !newEv.severity ||
+        newEv.coords.length !== 2 || newEv.coords.some(isNaN)) {
+      showToast('Invalid input!');
+      return;
+    }
+
+    fetch('/api/disasters', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(newEv)
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Server error');
+      return res.json();
+    })
+    .then(savedEvent => {
+      localDisasters.push(savedEvent);
+      showToast('Event saved!');
+      newEventForm.reset();
+      renderAll();
+      renderForecastHistory();
+    })
+    .catch(err => {
+      console.error(err);
+      showToast('Error saving event');
+    });
+  });
+}
+
+
+      function setupMap() {
+        if (map) map.remove();
+        map = L.map('map').setView([40.5,20.4],6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+          attribution:'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        icons = {
+          earthquake: L.divIcon({html:'🌋',className:'emoji-marker',iconSize:[32,32]}),
+          flood:      L.divIcon({html:'🌊',className:'emoji-marker',iconSize:[32,32]}),
+          wildfire:   L.divIcon({html:'🔥',className:'emoji-marker',iconSize:[32,32]})
+        };
+
+        map.on('click', function(e){
+          const lat = e.latlng.lat.toFixed(5);
+          const lng = e.latlng.lng.toFixed(5);
+          document.getElementById('newCoords').value = `${lat},${lng}`;
+          if(window._tempMarker) map.removeLayer(window._tempMarker);
+          window._tempMarker = L.marker([lat,lng]).addTo(map);
+          showToast(`Coords set to ${lat},${lng}`);
+        });
+      }
+
+      function renderMarkers(filtered) {
+        if(markers.length){
+          markers.forEach(m=>map.removeLayer(m));
+          markers=[];
+        }
+        filtered.forEach((d,idx)=>{
+          var m = L.marker(d.coords,{icon:icons[d.type]})
+            .bindPopup(
+              `<b>${d.type.charAt(0).toUpperCase()+d.type.slice(1)}</b><br>
+               <b>Location:</b> ${d.location}<br>
+               <b>Date:</b> ${d.date}<br>
+               <b>Severity:</b> ${d.severity}<br>
+               <span style="font-size:0.97em;">${d.description}</span>`
+            ).addTo(map);
+          m._markerIdx=idx;
+          markers.push(m);
+        });
+      }
+
+      var chart;
+      function renderChart(filtered){
+        var types=["earthquake","flood","wildfire"];
+        var counts=types.map(t=>filtered.filter(d=>d.type===t).length);
+        var ctx=document.getElementById('disasterChart').getContext('2d');
+        if(chart) chart.destroy();
+        chart=new Chart(ctx,{
+          type:'bar',
+          data:{labels:["Earthquake","Flood","Wildfire"],datasets:[{
+            label:'Number of Events',data:counts,
+            backgroundColor:['#e57373','#64b5f6','#ffa726'],borderRadius:8
+          }]},
+          options: {
+  responsive: true,
+  plugins: {
+    legend: {
+      display: false
+    }
+  },
+  scales: {
+    x: {
+      ticks: {
+        color: "white",      // X-axis labels (Earthquake/Flood/Wildfire)
+        font: { size: 14 }
+      },
+      grid: {
+        color: "rgba(255, 255, 255, 0.1)"   // soft gridlines
+      }
+    },
+    y: {
+      beginAtZero: true,
+      ticks: {
+        color: "white",      // Y-axis numbers
+        font: { size: 14 }
+      },
+      grid: {
+        color: "rgba(255, 255, 255, 0.1)"   // soft gridlines
+      }
+    }
+  }
+}
+
+        });
+      }
+
+      function renderLiveStats(filtered){
+        var cnt={"earthquake":0,"flood":0,"wildfire":0};
+        filtered.forEach(d=>{if(cnt[d.type]!==undefined) cnt[d.type]++});
+        var sum=filtered.length;
+        document.getElementById('typePercents').textContent=
+          ["earthquake","flood","wildfire"].map(t=>
+            `${t.charAt(0).toUpperCase()+t.slice(1)}: ${sum?Math.round(cnt[t]/sum*100):0}%`
+          ).join(" • ");
+        let sev=filtered.map(d=>d.severity).sort();
+        document.getElementById('mostSevere').textContent=sev.length?`Most Severe: ${sev.pop()}`:'';
+        let dates=filtered.map(d=>d.date).sort();
+        document.getElementById('newestOldest').textContent=dates.length?
+          `Newest: ${dates.pop()} | Oldest: ${dates.shift()}`:'';
+      }
+
+      function getPagedData(data){
+        let start=(pageNum-1)*pageSize,end=start+pageSize;
+        return{pageData:data.slice(start,end),total:data.length};
+      }
+
+      function renderTable(filtered){
+        let{pageData}=getPagedData(filtered);
+        let tbody=document.querySelector('#disasterTable tbody');
+        tbody.innerHTML='';
+        if(!pageData.length){
+          tbody.innerHTML='<tr><td colspan="5" style="text-align:center;">No events to show.</td></tr>';
+          document.getElementById('rowCount').textContent='';
+          showToast('No results found!');
+          return;
+        }
+        pageData.forEach((d,i)=>{
+          let idx=i+(pageNum-1)*pageSize;
+          let row=document.createElement('tr');
+          row.dataset.markerIdx=idx;
+          row.innerHTML=`
+            <td style="font-size:1.5em;">${d.type==="earthquake"?"🌋":d.type==="flood"?"🌊":"🔥"}</td>
+            <td>${d.location}</td><td>${d.date}</td><td>${d.severity}</td><td>${d.description}</td>`;
+          row.classList.add('row-pulse');
+          setTimeout(()=>row.classList.remove('row-pulse'),500);
+          tbody.appendChild(row);
+        });
+        document.getElementById('rowCount').textContent=`Showing ${pageData.length} of ${filtered.length} events.`;
+      }
+
+      function renderSummary(filtered){
+        document.getElementById('totalEvents').textContent=filtered.length;
+        let cnt={};
+        filtered.forEach(d=>cnt[d.type]=(cnt[d.type]||0)+1);
+        let top=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0]||"";
+        document.getElementById('mostCommon').textContent=top?top.charAt(0).toUpperCase()+top.slice(1):"—";
+        if(filtered.length){
+          let last=filtered.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
+          document.getElementById('lastDate').textContent=last.date;
+        } else document.getElementById('lastDate').textContent="—";
+      }
+
+      function getFilteredData(){
+        let data=allDisasters.concat(localDisasters);
+        if(currentFilterType!=='all') data=data.filter(d=>d.type===currentFilterType);
+        if(currentSearchQuery.trim()){
+          let q=currentSearchQuery.toLowerCase();
+          data=data.filter(d=>
+            d.type.includes(q)||d.location.toLowerCase().includes(q)||
+            d.date.includes(q)||d.severity.toLowerCase().includes(q)||
+            (d.description||'').toLowerCase().includes(q)
+          );
+        }
+        if(currentDateFrom) data=data.filter(d=>d.date>=currentDateFrom);
+        if(currentDateTo)   data=data.filter(d=>d.date<=currentDateTo);
+        if(currentSortCol){
+          data=data.slice().sort((a,b)=>{
+            let va=a[currentSortCol]||'',vb=b[currentSortCol]||'';
+            if(currentSortCol==='date') return currentSortDir==='asc'?va.localeCompare(vb):vb.localeCompare(va);
+            return currentSortDir==='asc'?(va<vb?-1:va>vb?1:0):(vb<va?-1:vb>va?1:0);
+          });
+        }
+        return data;
+      }
+
+      function addTableMapListeners(){
+        document.querySelectorAll('#disasterTable tbody tr').forEach(row=>{
+          row.onmouseenter=row.onmouseleave=row.onclick=null;
+        });
+        document.querySelectorAll('#disasterTable tbody tr').forEach(row=>{
+          row.onmouseenter=function(){
+            this.classList.add('row-highlight');
+            let idx=parseInt(this.dataset.markerIdx);
+            markers[idx]?.openPopup();
+          };
+          row.onmouseleave=function(){
+            this.classList.remove('row-highlight');
+            let idx=parseInt(this.dataset.markerIdx);
+            markers[idx]?.closePopup();
+          };
+          row.onclick=function(){
+            let idx=parseInt(this.dataset.markerIdx);
+            if(markers[idx]){
+              map.setView(markers[idx].getLatLng(),9,{animate:true});
+              markers[idx].openPopup();
+            }
+          };
+        });
+      }
+
+      function renderAll(){
+        let filtered=getFilteredData();
+        // ⭐ Update globe data every render
+window.__disasterData = filtered
+    .filter(d => Array.isArray(d.coords) && d.coords.length === 2)
+    .map(d => ({
+        type: d.type,
+        lat: Number(d.coords[0]),
+        lng: Number(d.coords[1])
+    }));
+
+// If globe is visible, refresh markers
+if (document.getElementById("globeContainer").style.display !== "none") {
+    initPlanetaryGlobe();
+}
+
+        let pages=Math.ceil(filtered.length/pageSize)||1;
+        pageNum=Math.min(Math.max(pageNum,1),pages);
+        setupMap();
+        renderMarkers(filtered);
+        renderChart(filtered);
+        renderSummary(filtered);
+        renderTable(filtered);
+        renderLiveStats(filtered);
+        addTableMapListeners();
+      }
+
+      // initial render + history list
+      renderAll();
+      renderForecastHistory();
+
+      // Type filters
+      document.querySelectorAll('.filter-btn[data-type]').forEach(btn=>{
+        btn.onclick=()=>{
+          document.querySelectorAll('.filter-btn[data-type]').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          currentFilterType=btn.dataset.type;
+          pageNum=1;renderAll();
+        };
+      });
+
+      // Search
+      document.getElementById('searchInput').oninput=e=>{
+        currentSearchQuery=e.target.value;pageNum=1;renderAll();
+      };
+      document.getElementById('clearSearchBtn').onclick=()=>{
+        document.getElementById('searchInput').value='';currentSearchQuery='';pageNum=1;renderAll();
+      };
+
+      // Date filters
+      document.getElementById('dateFrom').onchange=e=>{
+        currentDateFrom=e.target.value;pageNum=1;renderAll();
+      };
+      document.getElementById('dateTo').onchange=e=>{
+        currentDateTo=e.target.value;pageNum=1;renderAll();
+      };
+
+      // Sorting
+      document.querySelectorAll('#disasterTable th.sortable').forEach(th=>{
+        th.onclick=()=>{
+          let col=th.dataset.sort;
+          if(currentSortCol===col) currentSortDir=currentSortDir==='asc'?'desc':'asc';
+          else { currentSortCol=col; currentSortDir='asc'; }
+          pageNum=1;renderAll();
+          document.querySelectorAll('#disasterTable th').forEach(x=>x.classList.remove('sorted-asc','sorted-desc'));
+          th.classList.add(currentSortDir==='asc'?'sorted-asc':'sorted-desc');
+        };
+      });
+
+      // Pagination
+      document.getElementById('prevPageBtn').onclick=()=>{
+        if(pageNum>1){pageNum--;renderAll();}
+      };
+      document.getElementById('nextPageBtn').onclick=()=>{
+        let max=Math.ceil(getFilteredData().length/pageSize)||1;
+        if(pageNum<max){pageNum++;renderAll();}
+      };
+      document.getElementById('pageSizeSelect').onchange=e=>{
+        pageSize=parseInt(e.target.value);pageNum=1;renderAll();
+      };
+
+      // Reset filters
+      document.getElementById('resetFiltersBtn').onclick=()=>{
+        document.querySelectorAll('.filter-btn[data-type]').forEach(b=>b.classList.remove('active'));
+        document.querySelector('.filter-btn[data-type="all"]').classList.add('active');
+        currentFilterType='all';
+        document.getElementById('searchInput').value='';currentSearchQuery='';
+        document.getElementById('dateFrom').value='';currentDateFrom='';
+        document.getElementById('dateTo').value='';currentDateTo='';
+        currentSortCol='';currentSortDir='asc';pageNum=1;renderAll();
+        document.querySelectorAll('#disasterTable th').forEach(x=>x.classList.remove('sorted-asc','sorted-desc'));
+      };
+
+      // CSV export
+      document.getElementById('exportCsvBtn').onclick=()=>{
+        let rows=[['Type','Location','Date','Severity','Description']];
+        getFilteredData().forEach(d=>{
+          rows.push([d.type,d.location,d.date,d.severity,(d.description||'').replace(/\n/g,' ')]);
+        });
+        let csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+        let blob=new Blob([csv],{type:'text/csv'}),url=URL.createObjectURL(blob);
+        let a=document.createElement('a');a.href=url;a.download='disasters.csv';document.body.appendChild(a);a.click();
+        document.body.removeChild(a);URL.revokeObjectURL(url);showToast('CSV downloaded!');
+      };
+
+      // Chart download
+      document.getElementById('downloadChartBtn').onclick=()=>{
+        let url=document.getElementById('disasterChart').toDataURL('image/png');
+        let a=document.createElement('a');a.href=url;a.download='disaster_chart.png';document.body.appendChild(a);a.click();
+        document.body.removeChild(a);showToast('Chart image saved!');
+      };
+
+      // Print
+      document.getElementById('printReportBtn').onclick=()=>{
+        showToast('Generating print view...');
+        setTimeout(()=>window.print(),100);
+      };
+
+      // Socket.IO
+      const socket = io();
+      socket.on('hourly_alerts', ({ summary }) => {
+        showToast('New critical events: ' + summary);
+        fetchAndRenderDisasters();
+        socket.on('new_alert', evt => {
+          localDisasters.push(evt);
+          fetchAndRenderDisasters();
+        });
+        fetch('/api/disasters')
+          .then(r => r.json())
+          .then(disasters => {
+            allDisasters = disasters.slice();
+            renderAll();
+          })
+          .catch(console.error);
+      });
+
+      // Dark mode toggle
+      document.getElementById('toggleDarkModeBtn').onclick=function(){
+        document.body.classList.toggle('dark-mode');
+        this.textContent = document.body.classList.contains('dark-mode')
+          ? '☀️ Light Mode'
+          : '🌙 Dark Mode';
+      };
+
+      // Auto-refresh map data every 30s
+      let lastUpdate = null;
+      async function refreshMapData() {
+        try {
+          const res = await fetch("/api/disasters");
+          const data = await res.json();
+          const latest = data[0]?.id || null;
+          if (latest !== lastUpdate) {
+            lastUpdate = latest;
+            allDisasters = data.slice();
+            renderAll();
+            console.log("🔄 Map auto-refreshed at " + new Date().toLocaleTimeString());
+          }
+        } catch (err) {
+          console.error("❌ Auto-refresh error:", err);
+        }
+      }
+      setInterval(refreshMapData, 30000);
+    })
+    .catch(console.error);
+
+  // initial populate of forecast history (outside inner fetch)
+(function initHistory(){ fetch('/api/forecasts').then(()=>{}).finally(renderForecastHistory); })();
+});
+
+// Debug helper to find bad coords
+window.checkInvalidDisasters = function () {
+    console.log("❌ Invalid disasters:");
+    (window.__disasterData || []).forEach((d, i) => {
+        if (!d || !d.lat || !d.lng || isNaN(d.lat) || isNaN(d.lng)) {
+            console.log(i, d);
+        }
+    });
+    console.log("✔️ Done checking.");
+};
+</script>
+{% endblock %}
