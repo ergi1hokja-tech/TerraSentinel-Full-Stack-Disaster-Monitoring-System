@@ -1,16 +1,16 @@
-# TerraSentinel: AI Disaster Monitoring System 🌍
+# TerraSentinel: AI Disaster Monitoring System 
 
 TerraSentinel is a full-stack web application that uses AI to monitor, analyze, and predict global disaster risks in real-time.
 
-## 🚀 Features
+# Features
 
-* 🌐 Live global disaster tracking (earthquakes, floods, wildfires)
-* 🧠 AI-powered risk prediction using OpenAI
-* 📊 Interactive dashboard with real-time updates
-* 📩 Automated alert system
-* 🗺️ Global visualization and analytics
+*  Live global disaster tracking (earthquakes, floods, wildfires)
+*  AI-powered risk prediction using OpenAI
+*  Interactive dashboard with real-time updates
+*  Automated alert system
+*  Global visualization and analytics
 
-## 🛠️ Tech Stack
+ # Tech Stack
 
 * Backend: Flask (Python)
 * Frontend: HTML, CSS, JavaScript
@@ -18,7 +18,7 @@ TerraSentinel is a full-stack web application that uses AI to monitor, analyze, 
 * Database: SQLite
 * Real-time: Flask-SocketIO
 
-## ⚙️ Setup Instructions
+# Setup Instructions
 
 1. Clone the repository:
 git clone https://github.com/ergi1hokja-tech/TerraSentinel-Full-Stack-Disaster-Monitoring-System.git
@@ -32,8 +32,8 @@ OPENAI_API_KEY=your_key_here
 4. Run the app:
 python app.py
 
-## 📌 Project Purpose
+# Project Purpose
 
 This project was developed as part of a university assignment focusing on AI for disaster risk management.
-## 👨‍💻 Author
+# Author
 Ergi Hokja
