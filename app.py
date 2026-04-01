@@ -637,7 +637,7 @@ def forgot_password():
         user.reset_token = token
         db.session.commit()
 
-        reset_link = f"http://127.0.0.1:5000/reset-password/{token}"
+        reset_link = url_for("reset_password", token=token, _external=True)
 
         msg = Message(
             subject="TerraSentinel — Reset Your Password",
