@@ -200,7 +200,7 @@ def fetch_floods():
     """Fetch the latest 250 flood events from ReliefWeb (no date filter)."""
     print(f"🌊 Fetching ReliefWeb flood data at {datetime.now(timezone.utc)}...")
 
-    url = "https://api.reliefweb.int/v1/disasters?appname=ergi-terrasentinel-Vdf8Uj12"
+    url = "https://api.reliefweb.int/v2/disasters?appname=ergi-terrasentinel-Vdf8Uj12"
 
     payload = {
         "limit": 250,
