@@ -1,5 +1,7 @@
 # TerraSentinel: AI Disaster Monitoring System 
 
+Live app:https://terrasentinel-full-stack-disaster.onrender.com/
+
 TerraSentinel is a full-stack web application that uses AI to monitor, analyze, and predict global disaster risks in real-time.
 
 # Features
